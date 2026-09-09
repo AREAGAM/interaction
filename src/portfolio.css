@@ -1,0 +1,125 @@
+/* Portfolio additions preserve the original camera and motion choreography. */
+.brand { width: 360px; }
+.brand h1 { font-size: 39px; letter-spacing: -1.8px; }
+.brand > div { font-size: 13px; letter-spacing: .8px; margin-top: 7px; }
+.brand > p { font-size: 25px; width: 300px; }
+.brand-analysis { width: 238px; font-size: 23px; letter-spacing: 2px; }
+.brand > p > b { font-size: 21px; }
+.portfolio-intro { position: absolute; left: 110px; top: 247px; pointer-events: none; }
+.portfolio-intro > span { font-size: 13px; letter-spacing: 1.4px; color: #9aa89f; }
+.portfolio-intro h2 { font-size: 41px; font-weight: 400; letter-spacing: 5px; margin: 23px 0 15px; }
+.portfolio-intro p { font-size: 17px; letter-spacing: 2px; color: #e6ede7; }
+.portfolio-intro small { display: block; font-size: 12px; letter-spacing: 1.5px; margin-top: 24px; color: #9aa89f; }
+.discipline-nav { position: absolute; left: 110px; right: 110px; top: 186px; display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid #344438; padding-top: 14px; pointer-events: auto; }
+.discipline-nav button { padding: 8px 3px 12px; display: flex; align-items: center; gap: 15px; color: #9aa89f; font-size: 17px; border-bottom: 2px solid transparent; transition: color 180ms,border-color 180ms; }
+.discipline-nav button span { font-size: 12px; color: #9aa89f; }
+.discipline-nav button.active { color: #e6ede7; border-color: #344438; }
+.discipline-nav button:hover { color: #e6ede7; border-color: #344438; }
+[data-mode="boot"] .portfolio-intro,[data-mode="boot"] .discipline-nav { display: none; }
+.detail-content { top: 214px; width: 660px; max-height: 730px; overflow: auto; padding-right: 12px; scrollbar-width: thin; scrollbar-color: #344438 transparent; }
+.detail-content h2 { font-size: 36px; margin: 17px 0 10px; }
+.detail-kicker,.detail-kicker span:last-child,.detail-title-cn > span { font-size: 13px; }
+.detail-rule { margin-top: 19px; }
+.metadata { margin: 19px 0 24px; gap: 18px 24px; }
+.metadata dt { font-size: 12px; }
+.metadata dd { font-size: 15px; }
+.tab-panel { height: 350px; padding-top: 18px; }
+.project-figure { margin: 0 0 22px; }
+.project-figure a { display: block; overflow: hidden; background: #090d0b; }
+.project-figure img { display: block; width: 100%; height: auto; aspect-ratio: 16/9; object-fit: cover; transition: transform 500ms; }
+.project-figure a:hover img { transform: scale(1.025); }
+.project-figure figcaption { font-size: 12px; color: #9aa89f; margin-top: 9px; display: flex; justify-content: space-between; }
+.panel-label { font-size: 12px; }
+.project-tools { margin: 20px 0; border-top: 1px solid #344438; padding-top: 14px; font-size: 14px; color: #e6ede7; }
+.tab-panel p,.research-notes li { font-size: 17px; }
+.detail-actions { margin-top: 22px; }
+.detail-footnote { font-size: 13px; }
+.system-footer { font-size: 13px; }
+.category-filters { flex-wrap: wrap; gap: 10px; }
+.category-filters button { font-size: 14px; }
+.settings-intro { font-size: 14px; }
+.system-nav button { font-size: 16px; }
+.reduce-motion .project-figure img { transition: none; }
+/* Portrait layout uses the same project data, controls and archive state. */
+.portrait #stage { width: 100vw; height: 100dvh; }
+.portrait .brand { left: 22px; top: 24px; width: 225px; }
+.portrait .brand h1 { font-size: 25px; }
+.portrait .brand > div { font-size: 8px; }
+.portrait .brand > p { display: none; }
+.portrait .system-nav { top: 92px; left: 22px; right: 22px; justify-content: space-between; gap: 12px; }
+.portrait .system-nav button { font-size: 14px; }
+.portrait .system-nav .key { display: none; }
+.portrait .discipline-nav { top: 137px; left: 22px; right: 22px; display: grid; grid-template-columns: repeat(3,1fr); gap: 4px 10px; padding-top: 8px; }
+.portrait .discipline-nav button { font-size: 12px; gap: 5px; padding: 7px 0; }
+.portrait .discipline-nav button span { font-size: 10px; }
+.portrait .portfolio-intro { left: 22px; top: 248px; }
+.portrait .portfolio-intro > span { display: none; }
+.portrait .portfolio-intro h2 { font-size: 27px; margin: 0 0 10px; letter-spacing: 2px; }
+.portrait .portfolio-intro p { font-size: 12px; letter-spacing: 0; margin: 0; }
+.portrait .portfolio-intro small { margin-top: 10px; font-size: 10px; }
+.portrait .archive-callout { left: 22px; right: 22px; top: auto; bottom: 174px; width: auto; background: rgba(6, 11, 8, .92); padding: 18px; }
+.portrait .archive-callout .eyebrow { font-size: 10px; }
+.portrait .file-title { font-size: 20px; }
+.portrait .callout-rule { margin-top: 10px; width: 100%; }
+.portrait .file-summary { margin-top: 9px; font-size: 16px; }
+.portrait #selected-clearance { font-size: 9px; }
+.portrait .read-file { margin-top: 14px; font-size: 15px; }
+.portrait .archive-navigation { right: 24px; top: 360px; bottom: auto; }
+.portrait .archive-counter { left: 24px; bottom: 119px; }
+.portrait .archive-counter > div { font-size: 30px; }
+.portrait .archive-counter .tiny-label { font-size: 10px; }
+.portrait .column-navigation { left: auto; right: 22px; bottom: 101px; top: auto; transform: none; gap: 12px; }
+.portrait .column-navigation > div { min-width: 100px; }
+.portrait .column-navigation strong { font-size: 14px; }
+.portrait .column-navigation > div > span { font-size: 10px; }
+.portrait .column-navigation button { font-size: 23px; }
+.portrait .archive-hint,.portrait .powered,.portrait #hover-label,.portrait #inspection-marks,.portrait #inspection-text { display: none!important; }
+.portrait .system-footer { left: 22px; right: 22px; bottom: 26px; font-size: 9px; gap: 7px; }
+.portrait .system-footer > span:nth-child(2) { display: none; }
+.portrait .system-footer button { font-size: 10px; }
+.portrait .detail-content { left: 22px; right: 22px; top: 226px; width: auto; max-height: calc(100dvh - 290px); padding: 0; opacity: 1; }
+.portrait .detail-content h2 { font-size: 25px; }
+.portrait .detail-title-cn { font-size: 21px; gap: 12px; flex-wrap: wrap; }
+.portrait .detail-title-cn > span { font-size: 12px; }
+.portrait .metadata { gap: 16px 10px; }
+.portrait .metadata dt { font-size: 10px; }
+.portrait .metadata dd { font-size: 12px; }
+.portrait .detail-tabs { gap: 22px; }
+.portrait .detail-tabs button span { font-size: 14px; }
+.portrait .tab-panel { height: 330px; }
+.portrait .tab-panel p,.portrait .research-notes li { font-size: 16px; }
+.portrait .project-figure figcaption { font-size: 10px; }
+.portrait .back-button { left: 22px; top: 145px; font-size: 13px; }
+.portrait .back-button small { display: none; }
+.portrait .object-caption { left: 22px; top: 179px; bottom: auto; }
+.portrait .object-caption > span,.portrait .object-caption > div,.portrait .object-caption > small { display: none; }
+.portrait .viewer-open { margin: 0; font-size: 13px; }
+.portrait [data-mode="detail"] .three-scene { opacity: .09; }
+.portrait .terminal-modal { left: 16px; top: 35px; transform: none; width: calc(100vw - 32px); max-height: calc(100dvh - 70px); padding: 20px; overflow: auto; }
+.portrait .terminal-modal h2 { font-size: 25px; margin-top: 28px; }
+.portrait .modal-top { font-size: 10px; }
+.portrait .modal-top button { font-size: 12px; }
+.portrait .search-field { height: 48px; }
+.portrait .search-field input { font-size: 14px; min-width: 0; }
+.portrait .category-filters { gap: 6px; margin: 16px 0; }
+.portrait .category-filters button { font-size: 12px; padding: 7px; }
+.portrait .result-header,.portrait .result-row { grid-template-columns: 1fr; }
+.portrait .result-header > span:not(:first-child),.portrait .result-row > span:not(:first-child) { display: none; }
+.portrait .result-name > span { font-size: 16px; }
+.portrait .result-name small { font-size: 10px; }
+.portrait .search-results { height: calc(100dvh - 390px); min-height: 120px; }
+.portrait .modal-bottom { font-size: 9px; gap: 8px; flex-wrap: wrap; }
+.portrait .settings-modal .settings-list label { gap: 8px; }
+.portrait .settings-modal .settings-list strong { font-size: 13px; }
+.portrait .settings-modal .settings-list span { font-size: 12px; }
+.portrait .viewer-heading { left: 22px; top: 30px; }
+.portrait .viewer-heading h2 { font-size: 25px; }
+.portrait .viewer-close { right: 22px; top: 110px; }
+.portrait .viewer-toolbar { left: 18px; right: 18px; bottom: 58px; gap: 8px; flex-wrap: wrap; }
+.portrait .viewer-toolbar button { font-size: 12px; }
+.portrait .viewer-help { left: 22px; bottom: 20px; font-size: 10px; }
+.portrait .skip { right: 22px; bottom: 90px; font-size: 17px; }
+.portrait .boot { transform: scale(.36); transform-origin: top left; top: 230px; left: calc(50vw - 346px); width: 1920px; height: 1080px; }
+.portrait .loading-mark { width: 180px; }
+.portrait .loading > span { font-size: 12px; }
+@media (max-height:700px) and (orientation:portrait) { .portrait .portfolio-intro { display: none; } .portrait .archive-callout { bottom: 170px; } .portrait .archive-navigation { top: 260px; } }
