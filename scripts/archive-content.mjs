@@ -93,5 +93,5 @@ export async function loadContent() {
 }
 
 export function archiveText(r) {
-  return `\uFEFFsee/show · 设计作品档案\nPROJECT ${r.id} / ${r.title}\n${r.en}\n\n分类：${r.category}\n时间：${r.date}\n个人角色：${r.lead}\n工具：${r.tools}\n状态：概念占位，非真实项目履历\n\n${r.abstract}\n\n设计过程\n${r.findings.map((f) => f).join("\n")}\n\n本档案与图像为可替换的作品集示例。\n`;
+  return `\uFEFFSEE / SHOW · 设计作品档案\nPROJECT ${r.id} / ${r.title}\n${r.en}\n\n分类：${r.category}\n时间：${r.date}\n个人角色：${r.lead}\n工具：${r.tools}\n状态：概念占位，非真实项目履历\n\n${r.abstract}\n\n设计过程\n${r.findings.map((f) => f).join("\n")}\n\n本档案与图像为可替换的作品集示例。\n`;
 }

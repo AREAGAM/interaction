@@ -116,7 +116,7 @@ export class BootSequence {
           1 - [s.drawTop, s.drawLeft, s.drawRight][i],
         )),
     );
-    this.letters.textContent = "see/show".slice(0, Math.ceil(s.logoLetters.length * 8 / 11));
+    this.letters.textContent = "SEE / SHOW".slice(0, Math.ceil(s.logoLetters.length * 10 / 11));
     this.plus.style.opacity = String(s.plus);
     this.minus.style.opacity = String(s.minus);
     this.plus.setAttribute("transform", `rotate(${s.plusAngle} 69 70)`);

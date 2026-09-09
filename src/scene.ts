@@ -626,7 +626,7 @@ export class ArchiveScene {
     c.fillRect(12, 12, 1000, 6);
     c.fillRect(12, 419, 1000, 3);
     c.font = "bold 81px MiSans";
-    c.fillText("see/show", 22, 116);
+    c.fillText("SEE / SHOW", 22, 116);
     c.font = "32px MiSans";
     c.fillStyle = "#8a9b8c";
     c.fillText("SELECTED WORKS", 25, 174);

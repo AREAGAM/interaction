@@ -4,10 +4,11 @@
 button,input,select { color:inherit; }
 button:focus-visible,input:focus-visible,a:focus-visible,select:focus-visible { outline:2px solid var(--signal); outline-offset:5px; }
 ::selection { background:var(--signal); color:#091008; }
-.brand h1 { font-weight:750; letter-spacing:-2px; color:#f0f5ef; }
-.brand > div { color:#8b9c8e; letter-spacing:1.35px; font-size:12px; }
+.brand { top:106px; width:650px; }
+.brand h1 { font-size:34px; line-height:40px; font-weight:750; letter-spacing:-.7px; color:#f0f5ef; }
+.brand > .brand-name-cn { margin-top:4px; line-height:24px; font-size:20px; letter-spacing:2px; color:#d6e0d7; }
 .brand > p { color:#d6e0d7; }
-.brand > p > b { color:var(--signal); border-left:3px solid var(--signal); padding-left:10px; }
+
 .brand::before { content:''; position:absolute; width:32px; height:5px; background:var(--signal); left:0; top:-19px; }
 .system-nav { color:#dbe5db; }
 .system-nav button:hover,.system-nav #saved-count { color:var(--signal); }
@@ -195,3 +196,8 @@ select { background:#141f16; border-color:#49623d; color:#c6d9bc; }
 .loading-mark,.boot-logo,.welcome-logo { color:var(--signal); filter:drop-shadow(0 0 10px #a6ff0030); }
 .scan > span { color:var(--signal); text-shadow:0 0 10px #a6ff0050; }
 .viewer-index { color:#274018; }
+
+/* Keep both studio name lines above the portrait controls. */
+.portrait .brand { width:calc(100% - 44px); }
+.portrait .brand h1 { font-size:clamp(14px,4.2vw,25px); line-height:30px; letter-spacing:-.5px; }
+.portrait .brand > .brand-name-cn { margin-top:3px; font-size:14px; line-height:20px; letter-spacing:2px; }

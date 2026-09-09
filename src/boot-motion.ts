@@ -71,7 +71,7 @@ export function bootMotion(appTime: number) {
     plusAngle: 90 * smooth(progress(t, 10.24, 10.72)),
     authOpacity: f >= 281 && f < 487 ? 1 : 0,
     brand: [0, 1, 2].map((line) => brandTrack(frame, line)),
-    poweredLetters: typed("POWERED BY see/show", f, 279, 295).length,
+    poweredLetters: typed("POWERED BY SEE / SHOW", f, 279, 295).length,
     scanVisible: t >= 19.48 && t < 22.76,
     scan,
     scanRadius: scan.radius,
