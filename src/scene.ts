@@ -121,6 +121,7 @@ export class ArchiveScene {
     private readonly selectionPulse = baselineSelectionWave,
     private readonly deferSelectionPulse = false,
     private readonly lightingLook: LightingLook = "baseline",
+    private readonly brandShort = "SEE / SHOW",
   ) {
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -160,7 +161,11 @@ export class ArchiveScene {
     this.light.shadow.radius = 4;
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(200, 200),
-      new THREE.MeshStandardMaterial({ color: "#010302", roughness: 0.96, metalness: 0.05 }),
+      new THREE.MeshStandardMaterial({
+        color: "#010302",
+        roughness: 0.96,
+        metalness: 0.05,
+      }),
     );
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -4.63;
@@ -197,9 +202,7 @@ export class ArchiveScene {
   async load(assetUrl = "/assets/archive-cassette.glb") {
     this.labelMark.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(labelMarkSvg)}`;
     await this.labelMark.decode();
-    const gltf = await new GLTFLoader().loadAsync(
-      assetUrl,
-    );
+    const gltf = await new GLTFLoader().loadAsync(assetUrl);
     gltf.scene.updateMatrixWorld(true);
     const meshes: THREE.Mesh[] = [];
     gltf.scene.traverse((o) => {
@@ -444,7 +447,10 @@ export class ArchiveScene {
     };
   }
   setMode(mode: "hidden" | "archive" | "detail") {
-    if (mode === "detail") this.decryption.enter(this.scanBlend > .9 && this.decryption.clarity > .999);
+    if (mode === "detail")
+      this.decryption.enter(
+        this.scanBlend > 0.9 && this.decryption.clarity > 0.999,
+      );
     else this.decryption.leave();
     if (mode === "hidden") this.decryption.select();
     if (mode !== "archive") this.pendingPulse = null;
@@ -522,7 +528,8 @@ export class ArchiveScene {
     const shift = {
       lane:
         Math.abs(this.selectedCell.lane) > 2048
-          ? Math.round((this.selectedCell.lane - 2) / archiveColumns.length) * archiveColumns.length
+          ? Math.round((this.selectedCell.lane - 2) / archiveColumns.length) *
+            archiveColumns.length
           : 0,
       row:
         Math.abs(this.selectedCell.row) > 2048
@@ -626,7 +633,7 @@ export class ArchiveScene {
     c.fillRect(12, 12, 1000, 6);
     c.fillRect(12, 419, 1000, 3);
     c.font = "bold 81px MiSans";
-    c.fillText("SEE / SHOW", 22, 116);
+    c.fillText(this.brandShort, 22, 116);
     c.font = "32px MiSans";
     c.fillStyle = "#8a9b8c";
     c.fillText("SELECTED WORKS", 25, 174);
@@ -919,8 +926,12 @@ export class ArchiveScene {
       ? cinematic.zoom
       : THREE.MathUtils.lerp(this.detail, cameraTarget, blend);
     const detail = this.detail;
-    this.decryption.update(dt, detail > .78 && this.lift.value > 3.3, this.reduced,
-      cinematic ? shot + 5 : undefined);
+    this.decryption.update(
+      dt,
+      detail > 0.78 && this.lift.value > 3.3,
+      this.reduced,
+      cinematic ? shot + 5 : undefined,
+    );
     this.appearance.apply(this.model, ease(this.lift.value / 0.4));
     this.appearance.setClarity(this.model, this.decryption.clarity);
     // Reference 26.92–27.76: the array travels horizontally into a white field.
@@ -1220,8 +1231,12 @@ export class ArchiveScene {
       .project(this.camera);
     return [(p.x + 1) * 960, (1 - p.y) * 540];
   }
-  get decryptionFrame() { return this.decryption.frame; }
-  finishDecryption() { this.decryption.finish(); }
+  get decryptionFrame() {
+    return this.decryption.frame;
+  }
+  finishDecryption() {
+    this.decryption.finish();
+  }
   get detailVisibility() {
     return ease((this.detail - 0.25) / 0.55);
   }
@@ -1234,7 +1249,10 @@ export class ArchiveScene {
       return [Math.round((p.x + 1) * 960), Math.round((1 - p.y) * 540)];
     };
     return {
-      decryption: { ...this.decryption.frame, clarity: this.decryption.clarity },
+      decryption: {
+        ...this.decryption.frame,
+        clarity: this.decryption.clarity,
+      },
       topLeft: project(-2.5, 3.7, 0),
       topRight: project(2.5, 3.7, 0),
       labelTopLeft: project(-1.855, 3.27, 0.255),

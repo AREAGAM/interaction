@@ -22,7 +22,10 @@ export class BootSequence {
   private caps: SVGCircleElement[];
   private companyInk: HTMLElement[];
   private poweredHTML: string;
-  constructor(private stage: HTMLElement) {
+  constructor(
+    private stage: HTMLElement,
+    private brandShort = "SEE / SHOW",
+  ) {
     [
       ".access-text",
       ".boot-logo",
@@ -116,7 +119,10 @@ export class BootSequence {
           1 - [s.drawTop, s.drawLeft, s.drawRight][i],
         )),
     );
-    this.letters.textContent = "SEE / SHOW".slice(0, Math.ceil(s.logoLetters.length * 10 / 11));
+    this.letters.textContent = this.brandShort.slice(
+      0,
+      Math.ceil((s.logoLetters.length * this.brandShort.length) / 11),
+    );
     this.plus.style.opacity = String(s.plus);
     this.minus.style.opacity = String(s.minus);
     this.plus.setAttribute("transform", `rotate(${s.plusAngle} 69 70)`);
@@ -135,8 +141,7 @@ export class BootSequence {
     if (s.scanVisible) this.renderScan(s);
     this.opacity(".welcome", s.welcomeVisible ? s.welcomeOpacity : 0);
     this.el(".welcome").style.transform = `scale(${s.welcomeScale})`;
-    this.el(".welcome").style.filter =
-      `blur(${s.exitBlur}px)`;
+    this.el(".welcome").style.filter = `blur(${s.exitBlur}px)`;
     this.opacity(".welcome-panel", s.welcomePanel);
     this.opacity(".welcome-heading", 1);
     this.el(".welcome-heading").style.color =

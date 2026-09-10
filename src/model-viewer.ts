@@ -24,7 +24,11 @@ const PARTS = [
   { id: "carrier", label: "背板与框架", en: "CARRIER", depth: -2.05 },
 ] as const;
 
-type ModelSource = { model: THREE.Group; dispose: () => void; setClarity?: (value: number) => void };
+type ModelSource = {
+  model: THREE.Group;
+  dispose: () => void;
+  setClarity?: (value: number) => void;
+};
 export class ModelViewer {
   readonly root: HTMLElement;
   private canvasHost: HTMLElement;
@@ -64,6 +68,7 @@ export class ModelViewer {
     private onSound: (
       sound: "explode" | "assemble" | "tick",
     ) => void = () => {},
+    private brandShort = "SEE / SHOW",
   ) {
     this.onClose = onClose;
     this.root = document.createElement("section");
@@ -77,7 +82,7 @@ export class ModelViewer {
       <div class="scene-atmosphere viewer-atmosphere" aria-hidden="true"></div>
       <header class="viewer-header">
         <button class="viewer-back" data-viewer="close">← <span>返回档案</span><kbd>ESC</kbd></button>
-        <div class="viewer-heading"><span>SEE / SHOW / OBJECT STUDY</span><h2 id="viewer-title">档案模型</h2><p id="viewer-file"></p></div>
+        <div class="viewer-heading"><span>${this.brandShort} / OBJECT STUDY</span><h2 id="viewer-title">档案模型</h2><p id="viewer-file"></p></div>
         <span class="viewer-index">360<span>°</span></span>
       </header>
       <div class="viewer-surface" role="group" aria-label="玻璃模式"><button data-viewer="clear" aria-pressed="true">清晰</button><button data-viewer="frosted" aria-pressed="false">磨砂</button></div>
@@ -370,8 +375,12 @@ export class ModelViewer {
   private setSurface(clear: boolean) {
     this.targetClarity = clear ? 1 : 0;
     this.root.dataset.surface = clear ? "clear" : "frosted";
-    this.root.querySelector('[data-viewer="clear"]')!.setAttribute("aria-pressed", String(clear));
-    this.root.querySelector('[data-viewer="frosted"]')!.setAttribute("aria-pressed", String(!clear));
+    this.root
+      .querySelector('[data-viewer="clear"]')!
+      .setAttribute("aria-pressed", String(clear));
+    this.root
+      .querySelector('[data-viewer="frosted"]')!
+      .setAttribute("aria-pressed", String(!clear));
     if (this.reduced) this.clarity = { value: this.targetClarity, velocity: 0 };
   }
   private setExploded(value: boolean) {
@@ -527,7 +536,10 @@ export class ModelViewer {
     this.lastTime = time;
     if (this.source) {
       damp(this.clarity, this.targetClarity, 8, dt);
-      if (Math.abs(this.clarity.value - this.targetClarity) < .0001 && Math.abs(this.clarity.velocity) < .001)
+      if (
+        Math.abs(this.clarity.value - this.targetClarity) < 0.0001 &&
+        Math.abs(this.clarity.velocity) < 0.001
+      )
         this.clarity = { value: this.targetClarity, velocity: 0 };
       this.source.setClarity?.(this.clarity.value);
       damp(this.spread, this.targetSpread, this.reduced ? 45 : 5.5, dt);

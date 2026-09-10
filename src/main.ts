@@ -1,14 +1,22 @@
 import { InspectionOverlay } from "./inspection-overlay";
 import "./decryption.css";
 import { escapeHtml } from "./html";
-import { normalizeQuality, qualityPresets, type QualityPreset, type RenderQuality } from "./render-quality";
+import {
+  normalizeQuality,
+  qualityPresets,
+  type QualityPreset,
+  type RenderQuality,
+} from "./render-quality";
 import { qualityMarkup, syncQualityUI } from "./quality-settings";
 import "@kitlangton/rolling-number/styles.css";
 import "./style.css";
 import "./portfolio.css";
 import "./quality-settings.css";
 import "./blackline.css";
-import { createRollingNumber, createRollingText } from "@kitlangton/rolling-number";
+import {
+  createRollingNumber,
+  createRollingText,
+} from "@kitlangton/rolling-number";
 import { ArchiveScene } from "./scene";
 import { ModelViewer } from "./model-viewer";
 import { ContentTransition, SurfaceTransition } from "./ui-transitions";
@@ -20,6 +28,9 @@ import {
   archiveColumns,
   columnFiles,
   fileLocation,
+  siteCopy,
+  loadEditableContent,
+  watchEditableContent,
 } from "./data";
 import { TerminalAudio } from "./audio";
 import { audioSettingsMarkup } from "./audio-settings";
@@ -28,11 +39,13 @@ const $ = <T extends HTMLElement = HTMLElement>(selector: string) =>
   document.querySelector<T>(selector)!;
 import { logo, brandHeading } from "./brand";
 
+const contentStatus = await loadEditableContent();
+
 $("#stage").innerHTML = `
   <div id="three-scene" class="three-scene"></div>
   <div class="scene-atmosphere archive-atmosphere"></div>
   <div id="boot-background" class="boot-background"><svg viewBox="0 0 1920 1080" preserveAspectRatio="none"><g fill="none" stroke="#8fbc52" stroke-width="3"><path d="M-210 705C-45 705 182 704 247 567C337 377 99 306 4 435S27 680 169 631C309 584 227 314 279 111S568-113 568-113"/><path d="M1560-80C1374 114 1671 168 1601 323S1371 367 1431 480S1692 666 1559 787S1329 886 1498 1130"/><circle cx="1450" cy="648" r="346"/><circle cx="1450" cy="648" r="348"/></g></svg></div>
-  <header class="brand">${brandHeading}</header>
+  <header class="brand">${brandHeading(escapeHtml(siteCopy.brandFull), escapeHtml(siteCopy.brandChinese))}</header>
   <nav class="system-nav" aria-label="系统导航">
     <button data-action="search"><span class="nav-glyph">⌕</span> 项目索引 <span class="key">/</span></button>
     <button data-action="saved" aria-label="查看收藏档案" title="收藏档案">＋ SAVED <span id="saved-count">00</span></button>
@@ -41,17 +54,17 @@ $("#stage").innerHTML = `
   <button id="skip" class="skip" data-action="skip">进入作品档案 <span>↗</span></button>
   <section id="boot" class="boot" aria-label="系统启动">
     <div class="access-text">ACCESS</div>
-    <div class="boot-logo">${logo}</div>
+    <div class="boot-logo">${logo(escapeHtml(siteCopy.brandShort))}</div>
     <div class="auth-status"><span>▪</span> <span id="auth-message"></span><i></i></div>
     <div class="scan"><svg viewBox="0 0 1920 1080" aria-hidden="true"><g fill="none" stroke="#c0ff40" stroke-width="2" stroke-linecap="round"><path/><path stroke="#8fbc52"/><path/><path/><path/><path/><circle class="orbit-dot" r="8" fill="#bcff3b" stroke="none"/><circle class="orbit-dot" r="8" fill="#bcff3b" stroke="none"/><circle class="scan-core" cx="960" cy="540" r="5" fill="#bcff3b" stroke="none"/></g></svg><span>PORTFOLIO CONNECTED</span></div>
-    <div class="welcome"><div class="welcome-panel"></div><div class="welcome-heading">WELCOME TO</div><div class="welcome-company"><strong>SEE / SHOW</strong><strong class="welcome-highlight" aria-hidden="true">SEE / SHOW</strong></div><div class="welcome-database">SELECTED WORKS</div><div class="welcome-logo">${logo}</div></div>
+    <div class="welcome"><div class="welcome-panel"></div><div class="welcome-heading">WELCOME TO</div><div class="welcome-company"><strong>${escapeHtml(siteCopy.brandShort)}</strong><strong class="welcome-highlight" aria-hidden="true">${escapeHtml(siteCopy.brandShort)}</strong></div><div class="welcome-database">SELECTED WORKS</div><div class="welcome-logo">${logo(escapeHtml(siteCopy.brandShort))}</div></div>
   </section>
   <div id="cinema-caption" class="cinema-caption"></div>
   <svg id="inspection-marks" viewBox="0 0 1920 1080" aria-hidden="true"><path id="inspection-lines"/><g id="inspection-corners"></g><circle id="inspection-point" r="1.8"/></svg>
   <div id="inspection-text" aria-hidden="true">PROJECT ARCHIVE:<strong>SPATIAL DESIGN STUDIES</strong></div>
   <section id="archive-ui" class="archive-ui" aria-label="档案选择">
-    <div class="portfolio-intro"><span>INDEPENDENT DESIGNER / 综合设计个人作品集</span><h2>空间，及其可能。</h2><p>建筑设计 · VR 技术美术 · AI 视觉探索</p><small>BLACKLINE / 02 · 48 PROJECT STUDIES</small></div>
-    <nav class="discipline-nav" aria-label="作品分类">${archiveColumns.map((name,lane)=>`<button data-lane="${lane}"><span>${String(lane+1).padStart(2,"0")}</span>${escapeHtml(name)}</button>`).join("")}</nav>
+    <div class="portfolio-intro"><span>${escapeHtml(siteCopy.introLabel)}</span><h2>${escapeHtml(siteCopy.introTitle)}</h2><p>${escapeHtml(siteCopy.introSubtitle)}</p><small>${escapeHtml(siteCopy.introMeta)}</small></div>
+    <nav class="discipline-nav" aria-label="作品分类">${archiveColumns.map((name, lane) => `<button data-lane="${lane}"><span>${String(lane + 1).padStart(2, "0")}</span>${escapeHtml(name)}</button>`).join("")}</nav>
     <div class="archive-callout"><div class="eyebrow">SELECTED WORKS <span>／</span> <span id="archive-category">沉浸式VR展项</span></div><button class="file-title" data-action="open">PROJECT FILE: <span id="selected-id">X-<span id="selected-code">001</span></span><span class="file-open">↗</span></button><div class="callout-rule"><i></i></div><div class="file-summary"><span id="selected-title">零重力档案馆</span><span id="selected-clearance">CONCEPT STUDY</span></div><button class="read-file" data-action="open">抽取项目档案 <span>→</span></button></div>
     <div id="hover-label" class="hover-label" hidden>X-<span id="hover-code">001</span> / <span id="hover-title"></span></div>
     <div class="archive-counter"><span class="tiny-label">PROJECT / SELECT</span><div><span id="selected-number">01</span><i>/</i><span class="count-total">12</span></div></div>
@@ -64,17 +77,18 @@ $("#stage").innerHTML = `
     <div class="object-caption"><span id="object-id">NO.001</span><div>SELECTED WORKS</div><small>DRAG TO INSPECT <span>↔</span></small><button class="viewer-open" data-action="model-viewer">360° 查看文档模型 <span>↗</span></button></div>
     <article id="detail-content" class="detail-content"></article>
   </section>
-  <div class="powered">POWERED BY <b>SEE / SHOW</b><i></i></div>
-  <footer class="system-footer"><span><i class="status-light"></i> SEE / SHOW / DESIGN STUDIO</span><span>VISITOR / 访客 <i>／</i> <span id="clock">00:00:00</span></span><button data-action="replay" title="重播启动流程">REINITIALIZE ↗</button></footer>
+  <div class="powered">POWERED BY <b>${escapeHtml(siteCopy.brandShort)}</b><i></i></div>
+  <footer class="system-footer"><span><i class="status-light"></i> ${escapeHtml(siteCopy.brandFull)}</span><span>VISITOR / 访客 <i>／</i> <span id="clock">00:00:00</span></span><button data-action="replay" title="重播启动流程">REINITIALIZE ↗</button></footer>
   <div id="modal-root"></div><div id="toast" class="toast" role="status"></div>
-  <div id="loading" class="loading"><div class="loading-mark">${logo}</div><span>CONNECTING TO SELECTED WORKS</span><i></i></div>
+  <div id="loading" class="loading"><div class="loading-mark">${logo(escapeHtml(siteCopy.brandShort))}</div><span>CONNECTING TO SELECTED WORKS</span><i></i></div>${contentStatus.error ? `<div class="content-data-warning">内容表未载入：${escapeHtml(contentStatus.error)}。当前显示内置备份内容。</div>` : ""}
 `;
 
 $("#boot-background").insertAdjacentHTML(
   "beforeend",
   '<div class="boot-white"></div>',
 );
-const bootSequence = new BootSequence($("#stage"));
+const bootSequence = new BootSequence($("#stage"), siteCopy.brandShort);
+watchEditableContent();
 
 type Mode = "boot" | "archive" | "detail";
 let mode: Mode = "boot",
@@ -108,7 +122,12 @@ if (reviewParams.get("review") === "1") {
 }
 let toastTimer: ReturnType<typeof setTimeout>;
 let previousFocus: HTMLElement | null = null;
-const detailTransition = new SurfaceTransition($("#detail-ui"), undefined, 180, 180);
+const detailTransition = new SurfaceTransition(
+  $("#detail-ui"),
+  undefined,
+  180,
+  180,
+);
 const tabTransition = new ContentTransition();
 let modalTransition: SurfaceTransition | undefined;
 let modalClosing = false;
@@ -122,17 +141,32 @@ function readLocal<T>(key: string, fallback: T): T {
     return fallback;
   }
 }
-const saved = new Set<string>(readLocal<string[]>("space-field-blackline-saved", []));
-const storedPrefs = readLocal<Partial<{ sound: boolean; music: boolean; soundVolume: number; musicVolume: number; reduced: boolean; quality: boolean; rendering: RenderQuality }>>("space-field-blackline-settings", {});
+const saved = new Set<string>(
+  readLocal<string[]>("space-field-blackline-saved", []),
+);
+const storedPrefs = readLocal<
+  Partial<{
+    sound: boolean;
+    music: boolean;
+    soundVolume: number;
+    musicVolume: number;
+    reduced: boolean;
+    quality: boolean;
+    rendering: RenderQuality;
+  }>
+>("space-field-blackline-settings", {});
 const prefs = {
   sound: true,
   music: storedPrefs.sound ?? true,
-  soundVolume: .55,
-  musicVolume: .5,
+  soundVolume: 0.55,
+  musicVolume: 0.5,
   reduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
   quality: true,
   ...storedPrefs,
-  rendering: normalizeQuality(storedPrefs.rendering, storedPrefs.quality !== false),
+  rendering: normalizeQuality(
+    storedPrefs.rendering,
+    storedPrefs.quality !== false,
+  ),
 };
 const rollingMotion = {
   duration: 460,
@@ -170,7 +204,10 @@ const columnTitle = createRollingText($("#column-name"), {
   ...textOptions,
   text: $("#column-name").textContent ?? "",
 });
-const hoverTitle = createRollingText($("#hover-title"), { ...textOptions, text: "" });
+const hoverTitle = createRollingText($("#hover-title"), {
+  ...textOptions,
+  text: "",
+});
 const categoryTitle = createRollingText($("#archive-category"), {
   ...textOptions,
   text: $("#archive-category").textContent ?? "",
@@ -179,12 +216,19 @@ const clearanceTitle = createRollingText($("#selected-clearance"), {
   ...textOptions,
   text: $("#selected-clearance").textContent ?? "",
 });
-const rollingTitles = [selectionTitle, columnTitle, hoverTitle, categoryTitle, clearanceTitle];
+const rollingTitles = [
+  selectionTitle,
+  columnTitle,
+  hoverTitle,
+  categoryTitle,
+  clearanceTitle,
+];
 const selectedCode = createRollingNumber($("#selected-code"), codeOptions);
 const hoverCode = createRollingNumber($("#hover-code"), codeOptions);
 const audio = new TerminalAudio();
 audio.configure(prefs);
-let audioPreview = false, audioPreviewRequest = 0;
+let audioPreview = false,
+  audioPreviewRequest = 0;
 let scene: ArchiveScene;
 let viewer: ModelViewer | undefined;
 const accessLog: { id: string; time: string }[] = [];
@@ -197,14 +241,17 @@ function recordAccess() {
 }
 function saveAudioPrefs() {
   try {
-    localStorage.setItem("space-field-blackline-settings", JSON.stringify(prefs));
+    localStorage.setItem(
+      "space-field-blackline-settings",
+      JSON.stringify(prefs),
+    );
   } catch {}
   audio.configure(prefs);
 }
 function savePrefs() {
   saveAudioPrefs();
   if (prefs.reduced) {
-    rollingTitles.forEach(title => title.finish());
+    rollingTitles.forEach((title) => title.finish());
     detailTransition.finish();
     modalTransition?.finish();
     tabTransition.cancel();
@@ -216,7 +263,9 @@ function savePrefs() {
   syncQualityUI(prefs.rendering);
   updateQualitySummary();
   fileCounter.update({ animated: !prefs.reduced && mode === "archive" });
-  rollingTitles.forEach(title => title.update({ animated: !prefs.reduced && mode === "archive" }));
+  rollingTitles.forEach((title) =>
+    title.update({ animated: !prefs.reduced && mode === "archive" }),
+  );
   columnCounter.update({ animated: !prefs.reduced && mode === "archive" });
   selectedCode.update({ animated: !prefs.reduced && mode === "archive" });
   hoverCode.update({ animated: !prefs.reduced && mode === "archive" });
@@ -235,17 +284,19 @@ function fit() {
 window.addEventListener("resize", fit);
 fit();
 $("#file-ticks").innerHTML = columnFiles(fileLocation(selected).lane)
-  .map(
-    (index) => `<button data-select="${index}"></button>`,
-  )
+  .map((index) => `<button data-select="${index}"></button>`)
   .join("");
-const fileTicks = [...$("#file-ticks").querySelectorAll<HTMLButtonElement>("button")];
+const fileTicks = [
+  ...$("#file-ticks").querySelectorAll<HTMLButtonElement>("button"),
+];
 
 function setMode(next: Mode) {
   const previousMode = mode;
-  rollingTitles.forEach(title => title.update({ animated: !prefs.reduced && next === "archive" }));
+  rollingTitles.forEach((title) =>
+    title.update({ animated: !prefs.reduced && next === "archive" }),
+  );
   if (next !== "archive") {
-    rollingTitles.forEach(title => title.finish());
+    rollingTitles.forEach((title) => title.finish());
     hoverCode.finish();
     $("#hover-label").hidden = true;
   }
@@ -266,11 +317,15 @@ function setMode(next: Mode) {
   $(".system-footer").inert = next === "boot" || Boolean(modal);
   if (next === "detail") {
     if (previousMode !== "detail") detailTransition.show(prefs.reduced);
-  } else if (previousMode === "detail" || (next === "boot" && !$("#detail-ui").hidden)) {
+  } else if (
+    previousMode === "detail" ||
+    (next === "boot" && !$("#detail-ui").hidden)
+  ) {
     pendingDetailFocus = false;
     tabTransition.cancel();
     detailTransition.hide(prefs.reduced || next === "boot");
-    if (!modal && next === "archive") $(".read-file").focus({ preventScroll: true });
+    if (!modal && next === "archive")
+      $(".read-file").focus({ preventScroll: true });
   }
   $("#detail-ui").inert = next !== "detail" || Boolean(modal);
   scene?.setMode(next === "boot" ? "hidden" : next);
@@ -292,8 +347,12 @@ function select(index: number, navigation?: ArchiveNavigation) {
   activeTab = "overview";
   scene?.select(selected, navigation);
   updateSelection(navigation);
-  const columnMove = navigation && "axis" in navigation && navigation.axis === "lane";
-  audio.play(columnMove ? "column" : "tick", columnMove ? navigation.direction * .45 : 0);
+  const columnMove =
+    navigation && "axis" in navigation && navigation.axis === "lane";
+  audio.play(
+    columnMove ? "column" : "tick",
+    columnMove ? navigation.direction * 0.45 : 0,
+  );
 }
 function stepFile(direction: number) {
   const files = columnFiles(fileLocation(selected).lane);
@@ -312,9 +371,18 @@ function updateSelection(navigation?: ArchiveNavigation) {
   const r = records[selected];
   const { lane } = fileLocation(selected);
   const files = columnFiles(lane);
-  selectionTitle.update({ text: r.title, animated: !prefs.reduced && mode === "archive" });
-  clearanceTitle.update({ text: r.clearance, animated: !prefs.reduced && mode === "archive" });
-  categoryTitle.update({ text: r.category, animated: !prefs.reduced && mode === "archive" });
+  selectionTitle.update({
+    text: r.title,
+    animated: !prefs.reduced && mode === "archive",
+  });
+  clearanceTitle.update({
+    text: r.clearance,
+    animated: !prefs.reduced && mode === "archive",
+  });
+  categoryTitle.update({
+    text: r.category,
+    animated: !prefs.reduced && mode === "archive",
+  });
   const direction =
     navigation && "axis" in navigation
       ? navigation.direction > 0
@@ -343,12 +411,24 @@ function updateSelection(navigation?: ArchiveNavigation) {
         ? direction
         : "auto",
   });
-  document.querySelectorAll<HTMLButtonElement>("[data-lane]").forEach(button => { button.classList.toggle("active", Number(button.dataset.lane) === lane); button.setAttribute("aria-pressed", String(Number(button.dataset.lane) === lane)); });
-  columnTitle.update({ text: archiveColumns[lane], animated: !prefs.reduced && mode === "archive" });
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-lane]")
+    .forEach((button) => {
+      button.classList.toggle("active", Number(button.dataset.lane) === lane);
+      button.setAttribute(
+        "aria-pressed",
+        String(Number(button.dataset.lane) === lane),
+      );
+    });
+  columnTitle.update({
+    text: archiveColumns[lane],
+    animated: !prefs.reduced && mode === "archive",
+  });
   $<HTMLButtonElement>('[data-action="column-prev"]').disabled = false;
   $<HTMLButtonElement>('[data-action="column-next"]').disabled = false;
   fileTicks.forEach((button, slot) => {
-    const index = files[slot], record = records[index];
+    const index = files[slot],
+      record = records[index];
     button.dataset.select = String(index);
     button.setAttribute("aria-label", `选择档案 ${record.id} ${record.title}`);
     button.title = `${record.id} · ${record.title}`;
@@ -384,19 +464,25 @@ function toggleSaved() {
   if (saved.has(id)) saved.delete(id);
   else saved.add(id);
   try {
-    localStorage.setItem("space-field-blackline-saved", JSON.stringify([...saved]));
+    localStorage.setItem(
+      "space-field-blackline-saved",
+      JSON.stringify([...saved]),
+    );
   } catch {}
   $("#saved-count").textContent = String(saved.size).padStart(2, "0");
   const button = $<HTMLButtonElement>('[data-action="bookmark"]');
   const added = saved.has(id);
-  button.firstChild!.textContent = added ? "− REMOVE FROM SAVED" : "＋ SAVE ARCHIVE";
+  button.firstChild!.textContent = added
+    ? "− REMOVE FROM SAVED"
+    : "＋ SAVE ARCHIVE";
   button.querySelector("span")!.textContent = added ? "已收藏" : "收藏档案";
   button.setAttribute("aria-pressed", String(added));
   bookmarkFeedback?.cancel();
-  if (!prefs.reduced) bookmarkFeedback = button.animate(
-    [{ backgroundColor: "#425829" }, { backgroundColor: "#18221b" }],
-    { duration: 220, easing: "ease-out" },
-  );
+  if (!prefs.reduced)
+    bookmarkFeedback = button.animate(
+      [{ backgroundColor: "#425829" }, { backgroundColor: "#18221b" }],
+      { duration: 220, easing: "ease-out" },
+    );
   audio.play("confirm");
   notify(saved.has(id) ? "档案已加入收藏" : "已取消收藏");
 }
@@ -414,12 +500,54 @@ function renderDetail() {
   <div class="detail-actions"><button class="solid-button" data-action="bookmark">${saved.has(r.id) ? "− REMOVE FROM SAVED" : "＋ SAVE ARCHIVE"}<span>${saved.has(r.id) ? "已收藏" : "收藏档案"}</span></button><a class="export-button" href="/archives/SPACE-FIELD-${r.id}.txt" download="SPACE-FIELD-${r.id}.txt" aria-label="导出 ${r.id} 档案">EXPORT <span>↓</span></a></div>
   <div class="detail-footnote"><a href="${escapeHtml(r.source)}" target="_blank" rel="noopener">独立项目文档 ↗</a><span>${String(selected + 1).padStart(3, "0")} / ${String(records.length).padStart(3, "0")}</span></div>`;
   $("#detail-content").setAttribute("tabindex", "-1");
-  $('[data-action="bookmark"]').setAttribute("aria-pressed", String(saved.has(r.id)));
+  $('[data-action="bookmark"]').setAttribute(
+    "aria-pressed",
+    String(saved.has(r.id)),
+  );
   setTab(activeTab, false);
+}
+function mediaUrl(value: string) {
+  if (!value) return "";
+  try {
+    const url = new URL(value, location.href);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+function videoMarkup(value = "") {
+  const url = mediaUrl(value);
+  if (!url) return "";
+  const parsed = new URL(url);
+  let embed = "";
+  if (
+    ["youtube.com", "www.youtube.com", "m.youtube.com"].includes(
+      parsed.hostname,
+    )
+  ) {
+    const id = parsed.searchParams.get("v");
+    if (id && /^[\w-]{6,}$/.test(id))
+      embed = `https://www.youtube-nocookie.com/embed/${id}`;
+  } else if (parsed.hostname === "youtu.be") {
+    const id = parsed.pathname.slice(1);
+    if (/^[\w-]{6,}$/.test(id))
+      embed = `https://www.youtube-nocookie.com/embed/${id}`;
+  } else if (["vimeo.com", "www.vimeo.com"].includes(parsed.hostname)) {
+    const id = parsed.pathname.match(/\d+/)?.[0];
+    if (id) embed = `https://player.vimeo.com/video/${id}`;
+  } else if (parsed.hostname.includes("bilibili.com")) {
+    const id = url.match(/BV[\w]+/)?.[0];
+    if (id) embed = `https://player.bilibili.com/player.html?bvid=${id}`;
+  }
+  if (embed)
+    return `<div class="project-video"><iframe src="${escapeHtml(embed)}" title="项目视频" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+  if (/\.(mp4|webm|ogg)(?:$|[?#])/i.test(parsed.pathname + parsed.search))
+    return `<div class="project-video"><video src="${escapeHtml(url)}" controls playsinline preload="metadata"></video></div>`;
+  return `<a class="project-video-link" href="${escapeHtml(url)}" target="_blank" rel="noopener">查看项目视频 <span>↗</span></a>`;
 }
 function overview() {
   const r = records[selected];
-  return `<figure class="project-figure"><a href="${escapeHtml(r.image)}" target="_blank" rel="noopener" aria-label="查看项目示意图大图"><img src="${escapeHtml(r.image)}" alt="${escapeHtml(r.imageAlt)}" width="1600" height="900" /></a><figcaption>CONCEPT IMAGE / 占位概念图 <span>${escapeHtml(r.category)}</span></figcaption></figure><div class="panel-label">PROJECT BRIEF / 项目概述</div><p>${escapeHtml(r.abstract)}</p><div class="project-tools">${escapeHtml(r.tools)}</div>`;
+  return `<figure class="project-figure"><a href="${escapeHtml(r.image)}" target="_blank" rel="noopener" aria-label="查看项目示意图大图"><img src="${escapeHtml(r.image)}" alt="${escapeHtml(r.imageAlt)}" width="1600" height="900" /></a><figcaption>CONCEPT IMAGE / 占位概念图 <span>${escapeHtml(r.category)}</span></figcaption></figure>${videoMarkup(r.video)}<div class="panel-label">PROJECT BRIEF / 项目概述</div><p>${escapeHtml(r.abstract)}</p><div class="project-tools">${escapeHtml(r.tools)}</div>`;
 }
 function setTab(tab: string, sound = true) {
   if (sound && tab === activeTab) return;
@@ -469,7 +597,10 @@ function openModal(kind: NonNullable<typeof modal>) {
   if (!modal) {
     previousFocus = document.activeElement as HTMLElement;
     modalSiblings = [...$("#stage").children]
-      .filter((node): node is HTMLElement => node instanceof HTMLElement && node.id !== "modal-root")
+      .filter(
+        (node): node is HTMLElement =>
+          node instanceof HTMLElement && node.id !== "modal-root",
+      )
       .map((node) => ({ node, inert: node.inert }));
     modalSiblings.forEach(({ node }) => (node.inert = true));
   }
@@ -518,7 +649,8 @@ function renderModal() {
     });
   } else
     requestAnimationFrame(() => {
-      if (backdrop.isConnected && !modalClosing) $('[data-action="close-modal"]').focus();
+      if (backdrop.isConnected && !modalClosing)
+        $('[data-action="close-modal"]').focus();
     });
   $("#modal-root")
     .querySelector(".modal-backdrop")
@@ -552,7 +684,9 @@ function updateQualitySummary() {
   const summary = document.querySelector("#quality-summary");
   if (!summary || !scene) return;
   const canvas = scene.renderer.domElement;
-  const metrics = JSON.parse(canvas.parentElement?.dataset.renderQuality ?? "{}");
+  const metrics = JSON.parse(
+    canvas.parentElement?.dataset.renderQuality ?? "{}",
+  );
   summary.textContent = `实际渲染 ${canvas.width} × ${canvas.height} · ${prefs.rendering.antialias === "smaa" ? "SMAA" : "原始抗锯齿"} · 纹理 ${metrics.anisotropy ?? 1}×${metrics.limited ? " · 已达到缓冲上限" : ""}`;
 }
 function settingsMarkup() {
@@ -562,13 +696,21 @@ function settingsMarkup() {
 document.addEventListener("input", (e) => {
   const slider = e.target as HTMLInputElement;
   if (slider.dataset.quality) {
-    const output = document.querySelector<HTMLOutputElement>(`[data-quality-output="${slider.dataset.quality}"]`);
+    const output = document.querySelector<HTMLOutputElement>(
+      `[data-quality-output="${slider.dataset.quality}"]`,
+    );
     if (output) output.value = `${slider.value}%`;
   }
   const volume = e.target as HTMLInputElement;
-  if (volume.dataset.volume === "musicVolume" || volume.dataset.volume === "soundVolume") {
+  if (
+    volume.dataset.volume === "musicVolume" ||
+    volume.dataset.volume === "soundVolume"
+  ) {
     prefs[volume.dataset.volume] = Number(volume.value) / 100;
-    volume.closest("label")?.querySelector("output")?.replaceChildren(`${volume.value}%`);
+    volume
+      .closest("label")
+      ?.querySelector("output")
+      ?.replaceChildren(`${volume.value}%`);
     saveAudioPrefs();
   }
   if ((e.target as HTMLElement).id === "archive-search") {
@@ -583,13 +725,23 @@ document.addEventListener("change", (e) => {
     savePrefs();
   } else if (el.dataset.quality) {
     const key = el.dataset.quality as keyof RenderQuality;
-    prefs.rendering = normalizeQuality({ ...prefs.rendering, [key]: key === "antialias" ? el.value : Number(el.value) });
+    prefs.rendering = normalizeQuality({
+      ...prefs.rendering,
+      [key]: key === "antialias" ? el.value : Number(el.value),
+    });
     savePrefs();
   }
   if (el.dataset.pref) {
     const key = el.dataset.pref;
-    if (key === "sound" || key === "music" || key === "reduced" || key === "quality") prefs[key] = el.checked;
-    if (key === "sound" || key === "music") saveAudioPrefs(); else savePrefs();
+    if (
+      key === "sound" ||
+      key === "music" ||
+      key === "reduced" ||
+      key === "quality"
+    )
+      prefs[key] = el.checked;
+    if (key === "sound" || key === "music") saveAudioPrefs();
+    else savePrefs();
     audio.play("confirm");
   }
 });
@@ -598,7 +750,8 @@ document.addEventListener("click", (e) => {
   const el = (e.target as Element).closest<HTMLElement>("button");
   if (!el) return;
   if (el.dataset.lane !== undefined) {
-    if (ready && mode === "archive" && !modal) select(columnMemory[Number(el.dataset.lane)]);
+    if (ready && mode === "archive" && !modal)
+      select(columnMemory[Number(el.dataset.lane)]);
     return;
   }
   if (el.dataset.select) {
@@ -642,7 +795,15 @@ document.addEventListener("click", (e) => {
   if (action === "column-next") stepColumn(1);
   if (action === "open") openFile();
   if (action === "model-viewer" && mode === "detail") {
-    viewer ??= new ModelViewer($("#stage"), () => { audio.setScene(mode); audio.play("page-close"); }, (sound) => audio.play(sound === "tick" ? "ui-tick" : sound));
+    viewer ??= new ModelViewer(
+      $("#stage"),
+      () => {
+        audio.setScene(mode);
+        audio.play("page-close");
+      },
+      (sound) => audio.play(sound === "tick" ? "ui-tick" : sound),
+      siteCopy.brandShort,
+    );
     audio.setScene("viewer");
     viewer.setQuality(prefs.rendering);
     scene.finishDecryption();
@@ -688,7 +849,11 @@ document.addEventListener("keydown", (e) => {
   const typing = e.target instanceof HTMLInputElement;
   if (e.key === "Escape") {
     if (modal) closeModal();
-    else if (mode === "detail" || (mode === "boot" && ready)) { const sound = mode === "detail" ? "back" : "ui-tick"; setMode("archive"); audio.play(sound); }
+    else if (mode === "detail" || (mode === "boot" && ready)) {
+      const sound = mode === "detail" ? "back" : "ui-tick";
+      setMode("archive");
+      audio.play(sound);
+    }
     return;
   }
   if (modal && e.key === "Tab") {
@@ -697,7 +862,7 @@ document.addEventListener("keydown", (e) => {
         'button,input:not(:disabled),select:not(:disabled),summary,[tabindex="0"]',
       ),
     ];
-    const visible = focusables.filter(el => el.getClientRects().length > 0);
+    const visible = focusables.filter((el) => el.getClientRects().length > 0);
     const first = visible[0],
       last = visible.at(-1);
     if (e.shiftKey && document.activeElement === first) {
@@ -829,14 +994,26 @@ function frame(ms: number) {
     $("#detail-content").style.transform =
       `translateY(${(1 - scene.detailVisibility) * 18}px)`;
     $("#detail-content").inert = scene.detailVisibility < 0.1;
-    if (pendingDetailFocus && scene.detailVisibility >= 0.1 && !modal && !viewer?.isOpen) {
+    if (
+      pendingDetailFocus &&
+      scene.detailVisibility >= 0.1 &&
+      !modal &&
+      !viewer?.isOpen
+    ) {
       $("#detail-content").focus({ preventScroll: true });
       pendingDetailFocus = false;
     }
   }
-  $("#stage").style.setProperty("--detail-shade", String(mode === "boot" ? 0 : scene?.detailVisibility ?? 0));
-  if (scene) inspectionOverlay.render(scene.decryptionFrame,
-    (x, y) => scene.projectCard(x, y), Boolean(cinema));
+  $("#stage").style.setProperty(
+    "--detail-shade",
+    String(mode === "boot" ? 0 : (scene?.detailVisibility ?? 0)),
+  );
+  if (scene)
+    inspectionOverlay.render(
+      scene.decryptionFrame,
+      (x, y) => scene.projectCard(x, y),
+      Boolean(cinema),
+    );
   if (Math.floor(time) !== lastTime) {
     lastTime = Math.floor(time);
     $("#clock").textContent = new Date().toLocaleTimeString("en-GB");
@@ -853,7 +1030,13 @@ function frame(ms: number) {
 }
 async function start() {
   try {
-    scene = new ArchiveScene($("#three-scene"));
+    scene = new ArchiveScene(
+      $("#three-scene"),
+      undefined,
+      false,
+      "baseline",
+      siteCopy.brandShort,
+    );
     await Promise.all([
       scene.load(),
       document.fonts.load("400 20px MiSans"),
@@ -877,7 +1060,10 @@ async function start() {
         value: Number(records[i].id.slice(2)),
         animated: !label.hidden && animated,
       });
-      hoverTitle.update({ text: records[i].title, animated: !label.hidden && animated });
+      hoverTitle.update({
+        text: records[i].title,
+        animated: !label.hidden && animated,
+      });
       label.hidden = false;
       // Prepare the first visible value so the next hover can animate immediately.
       hoverCode.update({ animated });
@@ -938,7 +1124,10 @@ Object.assign(window, {
       fps: Math.round(fps),
       mode,
       ready,
-      bootTime: mode === "boot" ? (frozenTime ?? performance.now() / 1000 - bootStart) + 5 : null,
+      bootTime:
+        mode === "boot"
+          ? (frozenTime ?? performance.now() / 1000 - bootStart) + 5
+          : null,
       selected: records[selected].id,
       saved: [...saved],
       audio: audio.stats(),

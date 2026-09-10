@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@kitlangton/rolling-number": "0.4.1",
+    "read-excel-file": "^9.3.10",
     "three": "^0.183.0"
   },
   "devDependencies": {
