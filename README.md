@@ -8,7 +8,9 @@
 
 ## 本地运行
 
-需要 Node.js 22.12 以上。双击「启动作品集.cmd」，或运行 `npm ci` 后 `npm run dev`。构建：`npm run build`。
+只查看成品时，解压后双击「一键本地预览.cmd」，不需要安装 Node.js，也不依赖互联网。完整说明见 [本地包说明](本地包说明.md)。
+
+开发模式需要 Node.js 22.12 以上。双击「启动作品集.cmd」，或运行 `npm ci` 后 `npm run dev`。构建：`npm run build`。
 
 ## 内容
 
@@ -33,3 +35,5 @@
 ## 来源
 
 基于 [LBEILC/RhineLabUI](https://github.com/LBEILC/RhineLabUI) 改编。保留 MIT 许可与第三方字体等许可。原版说明及档案存于 upstream，原参考验证资料保留；其验证报告不等于本改编版的验证结果。
+
+
