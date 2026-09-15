@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import * as THREE from 'three';
+import {createParticleCloud,updateParticleClouds} from '../src/archive-particles.ts';
+import {CardAppearance} from '../src/appearance.ts';
+const data=JSON.parse(await fs.readFile(new URL('../public/assets/particles/particle-seeds.json',import.meta.url),'utf8'));
+const appearance=new CardAppearance(),current=new THREE.Group();current.add(createParticleCloud(data.particles));appearance.prepare(current);
+const returning=current.clone(true);appearance.prepare(returning);
+const a=current.children[0],b=returning.children[0];assert.notEqual(a.material,b.material);assert.notEqual(a.geometry,b.geometry);
+updateParticleClouds(current,1,1080,0,1);updateParticleClouds(returning,2,720,0,0);
+assert.equal(a.geometry.drawRange.count,1200);assert.equal(b.geometry.drawRange.count,96);assert.equal(a.material.uniforms.uTime.value,1);
+appearance.apply(current,1);appearance.apply(returning,.25);appearance.dispose(returning);
+assert.equal(a.geometry.drawRange.count,1200);assert.equal(a.material.uniforms.uHeight.value,1080);
+console.log('Particle transitions passed: independent outgoing materials and draw ranges; no array proxy meshes.');

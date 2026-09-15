@@ -11,23 +11,33 @@ import {
 } from "./quality-renderer";
 
 const PARTS = [
-  { id: "fasteners", label: "紧固件", en: "FASTENERS", depth: 2.75 },
-  { id: "cover", label: "透明盖板", en: "OPTICAL COVER", depth: 1.85 },
+  { id: "fasteners", label: "紧固件", en: "FASTENERS", depth: 1.85 },
+  { id: "cover", label: "透明盖板", en: "OPTICAL COVER", depth: 1.4 },
   {
     id: "optical-lenses",
-    label: "折射环组",
-    en: "REFRACTIVE RINGS",
-    depth: 0.75,
+    label: "视频面板",
+    en: "VIDEO PANEL",
+    depth: 2.0,
   },
-  { id: "optical-core", label: "光学核心", en: "OPTICAL CORE", depth: -0.15 },
-  { id: "substrate", label: "信息基板", en: "SUBSTRATE", depth: -1.1 },
-  { id: "carrier", label: "背板与框架", en: "CARRIER", depth: -2.05 },
+  { id: "optical-core", label: "动态粒子", en: "PARTICLE CLOUD", depth: -0.05 },
+  { id: "substrate", label: "轻量载架", en: "CARRIER GRID", depth: -0.7 },
+  { id: "carrier", label: "背板与框架", en: "CARRIER", depth: -1.35 },
 ] as const;
 
 type ModelSource = {
   model: THREE.Group;
   dispose: () => void;
   setClarity?: (value: number) => void;
+  update?: (time: number, height: number, spread: number) => void;
+  setVideoFile?: (file: File) => Promise<void>;
+  toggleVideo?: () => Promise<void>;
+  videoState?: () => {
+    available: boolean;
+    playing: boolean;
+    name: string;
+    error: string;
+    hasFrame: boolean;
+  };
 };
 export class ModelViewer {
   readonly root: HTMLElement;
@@ -57,7 +67,7 @@ export class ModelViewer {
   private status = "";
   private opener: HTMLElement | null = null;
   private siblings: { node: HTMLElement; inert: boolean }[] = [];
-  private initialCamera = new THREE.Vector3(7.2, 3.8, 12);
+  private initialCamera = new THREE.Vector3(-7.2, 3.8, 12);
   private onClose: () => void;
   private provider?: () => Promise<ModelSource>;
   isOpen = false;
@@ -86,6 +96,7 @@ export class ModelViewer {
         <span class="viewer-index">360<span>°</span></span>
       </header>
       <div class="viewer-surface" role="group" aria-label="玻璃模式"><button data-viewer="clear" aria-pressed="true">清晰</button><button data-viewer="frosted" aria-pressed="false">磨砂</button></div>
+      <div class="viewer-media"><div><span class="viewer-media-status">项目封面</span><small>载入的视频仅在本地预览</small></div><button data-viewer="video-load">载入项目视频</button><button data-viewer="video-toggle" disabled>播放视频</button><input type="file" class="viewer-video-file" aria-label="选择项目视频" accept="video/*" hidden></div>
       <aside class="viewer-parts" aria-label="模型装配结构"><div>ASSEMBLY / 装配结构</div>${PARTS.map((p, i) => `<p><span>${String(i + 1).padStart(2, "0")}</span><strong>${p.label}</strong><small>${p.en}</small></p>`).join("")}</aside>
       <div class="viewer-loading" role="status"><span>正在载入模型…</span><button data-viewer="retry" hidden>重新载入 ↗</button></div>
       <footer class="viewer-footer">
@@ -157,11 +168,35 @@ export class ModelViewer {
         this.setExploded(false);
         this.onSound("assemble");
       }
+      if (action === "video-load")
+        this.root
+          .querySelector<HTMLInputElement>(".viewer-video-file")!
+          .click();
+      if (action === "video-toggle") {
+        this.setExploded(true);
+        void this.source.toggleVideo?.();
+      }
       if (action === "reset") {
         this.resetView();
         this.onSound("tick");
       }
     });
+    this.root
+      .querySelector<HTMLInputElement>(".viewer-video-file")!
+      .addEventListener("change", async (event) => {
+        const input = event.target as HTMLInputElement,
+          file = input.files?.[0],
+          source = this.source;
+        input.value = "";
+        if (!file || !source?.setVideoFile || this.closing) return;
+        try {
+          await source.setVideoFile(file);
+          if (this.source === source && !this.closing) this.setExploded(true);
+        } catch (error) {
+          this.root.querySelector(".viewer-media-status")!.textContent =
+            error instanceof Error ? error.message : "视频载入失败";
+        }
+      });
     this.root.addEventListener("keydown", (event) => this.keydown(event));
   }
 
@@ -366,7 +401,14 @@ export class ModelViewer {
   }
 
   private setButtonsDisabled(disabled: boolean) {
-    for (const action of ["explode", "assemble", "reset", "clear", "frosted"]) {
+    for (const action of [
+      "explode",
+      "assemble",
+      "reset",
+      "clear",
+      "frosted",
+      "video-load",
+    ]) {
       this.root.querySelector<HTMLButtonElement>(
         `[data-viewer="${action}"]`,
       )!.disabled = disabled;
@@ -551,7 +593,10 @@ export class ModelViewer {
         this.setStatus(this.targetSpread ? "已拆解" : "已组装");
       }
       for (const part of PARTS) {
-        this.groups.get(part.id)!.position.z = part.depth * this.spread.value;
+        const group = this.groups.get(part.id)!;
+        group.position.z = part.depth * this.spread.value;
+        group.position.y =
+          part.id === "optical-lenses" ? -1.3 * this.spread.value : 0;
       }
     }
     this.controls.update();
@@ -567,9 +612,24 @@ export class ModelViewer {
     const objectDistance = this.camera.position.length();
     fog.near = Math.max(0, objectDistance - 1);
     fog.far = objectDistance + 12;
+    this.source?.update?.(
+      this.reduced ? 0 : time,
+      this.renderer.domElement.height,
+      this.spread.value,
+    );
+    const video = this.source?.videoState?.();
+    const videoButton = this.root.querySelector<HTMLButtonElement>(
+      '[data-viewer="video-toggle"]',
+    )!;
+    videoButton.disabled = !video?.available || this.loading;
+    videoButton.textContent = video?.playing ? "暂停视频" : "播放视频";
+    this.root.querySelector(".viewer-media-status")!.textContent =
+      video?.error || (video?.name ? video.name : "项目封面");
     this.pipeline.composer.render();
     this.root.dataset.stats = JSON.stringify({
       ready: Boolean(this.source),
+      particleCount: 1200,
+      video: this.source?.videoState?.(),
       clarity: this.clarity.value,
       targetClarity: this.targetClarity,
       spread: this.spread.value,
@@ -587,6 +647,7 @@ export class ModelViewer {
       parts: [...this.groups].map(([id, group]) => ({
         id,
         z: group.position.z,
+        y: group.position.y,
         meshes: group.children.length,
       })),
     });

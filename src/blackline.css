@@ -905,3 +905,61 @@ select {
   font-size: 13px;
   box-shadow: 0 0 22px #b6ff0040;
 }
+
+/* Local project media on the existing model viewer. */
+.viewer-media {
+  position: absolute;
+  right: 80px;
+  bottom: 146px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 5;
+  max-width: 820px;
+}
+.viewer-media > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 280px;
+  text-align: right;
+}
+.viewer-media-status {
+  color: #c3d4c6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.viewer-media small {
+  color: #85968a;
+  font-size: 12px;
+}
+.viewer-media button {
+  border: 1px solid #435d39;
+  background: rgba(2, 8, 3, 0.92);
+  color: #bbd3b7;
+  padding: 12px 16px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.viewer-media button:hover {
+  border-color: #b6ff00;
+  color: #b6ff00;
+}
+.viewer-media button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.portrait .viewer-media {
+  right: 28px;
+  left: 28px;
+  bottom: 210px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.portrait .viewer-media > div {
+  width: 100%;
+  max-width: none;
+  text-align: center;
+}

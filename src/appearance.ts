@@ -14,6 +14,15 @@ export class CardAppearance {
 
   prepare(group: THREE.Group) {
     for (const child of group.children) {
+      if (child.userData.particleCloud) {
+        const cloud = child as THREE.Points<
+          THREE.BufferGeometry,
+          THREE.ShaderMaterial
+        >;
+        cloud.material = cloud.material.clone();
+        cloud.geometry = cloud.geometry.clone();
+        continue;
+      }
       const mesh = child as THREE.Mesh;
       const name = mesh.userData.surface as string;
       const palette = this.palettes.get(name);
@@ -45,7 +54,7 @@ export class CardAppearance {
           );
           shader.fragmentShader = shader.fragmentShader.replace(
             "#include <roughnessmap_fragment>",
-            "#include <roughnessmap_fragment>\nroughnessFactor = mix(mix(0.28, mix(0.48, 0.035, smoothstep(0.36, 0.68, vArchiveHeight)), archiveQuality), 0.025, archiveClarity);",
+            "#include <roughnessmap_fragment>\nroughnessFactor = mix(mix(0.28, mix(0.30, 0.22, smoothstep(0.36, 0.68, vArchiveHeight)), archiveQuality), 0.045, archiveClarity);",
           );
         } else if (!palette.low) {
           // Stable screen-space coverage adds internal geometry without an
@@ -100,6 +109,7 @@ export class CardAppearance {
 
   apply(group: THREE.Group, value: number) {
     for (const child of group.children) {
+      if (child.userData.particleCloud) continue;
       const mesh = child as THREE.Mesh;
       const palette = this.palettes.get(mesh.userData.surface);
       if (!palette) {
@@ -113,7 +123,11 @@ export class CardAppearance {
       const mat = mesh.material as Surface;
       mat.color.copy(low.color).lerp(high.color, value);
       mat.emissive.copy(low.emissive).lerp(high.emissive, value);
-      mat.emissiveIntensity = THREE.MathUtils.lerp(low.emissiveIntensity, high.emissiveIntensity, value);
+      mat.emissiveIntensity = THREE.MathUtils.lerp(
+        low.emissiveIntensity,
+        high.emissiveIntensity,
+        value,
+      );
       if (
         mat.attenuationColor &&
         low.attenuationColor &&
@@ -151,6 +165,7 @@ export class CardAppearance {
   dispose(group: THREE.Group) {
     for (const child of group.children) {
       const mesh = child as THREE.Mesh;
+      if (child.userData.particleCloud) mesh.geometry.dispose();
       const mat = mesh.material as THREE.MeshBasicMaterial;
       if (!mesh.userData.surface) mat.map?.dispose();
       mat.dispose();

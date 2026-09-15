@@ -1,3 +1,11 @@
+import {
+  loadParticleSeeds,
+  createParticleCloud,
+  createArrayParticles,
+  updateParticleClouds,
+} from "./archive-particles";
+import { createProjectMedia } from "./project-media";
+import type { ArchiveRecord } from "./data";
 import { createFluorescence } from "./fluorescence";
 import { blacklineMaterial } from "./blackline-materials";
 import * as THREE from "three";
@@ -199,14 +207,17 @@ export class ArchiveScene {
     this.composer.addPass(new OutputPass());
     this.bindPointer();
   }
-  async load(assetUrl = "/assets/archive-cassette.glb") {
+  async load(assetUrl = "/assets/particles/archive-cassette.glb") {
     this.labelMark.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(labelMarkSvg)}`;
-    await this.labelMark.decode();
-    const gltf = await new GLTFLoader().loadAsync(assetUrl);
+    const [gltf, seeds] = await Promise.all([
+      new GLTFLoader().loadAsync(assetUrl),
+      loadParticleSeeds(),
+      this.labelMark.decode(),
+    ]);
     gltf.scene.updateMatrixWorld(true);
     const meshes: THREE.Mesh[] = [];
     gltf.scene.traverse((o) => {
-      if (o instanceof THREE.Mesh) meshes.push(o);
+      if (o instanceof THREE.Mesh && !o.userData.particleProxy) meshes.push(o);
     });
     const count = LOOP_COLUMNS * LOOP_ROWS;
     for (let index = 0; index < count; index++) {
@@ -214,148 +225,57 @@ export class ArchiveScene {
       this.cells.push(cell);
       this.positions.push(this.cellPosition(cell));
     }
+    const registered = new Set<string>();
     for (const mesh of meshes) {
-      const geom = mesh.geometry
-        .clone()
-        .applyMatrix4(mesh.matrixWorld)
-        .scale(1, 1, 1);
-      const source = mesh.material as THREE.MeshStandardMaterial;
-      const name = source.name.replace(/\.\d+$/, "");
-      const mat = source.clone() as THREE.MeshPhysicalMaterial;
-      mat.envMapIntensity = 0.6;
-      if (name === "Frosted_Polymer") {
-        mat.color.set("#fffdfa");
-        mat.transmission = 0.9;
-        mat.thickness = 0.12;
-        mat.roughness = 0.21;
-        mat.ior = 1.46;
-        mat.attenuationColor = new THREE.Color("#eee6df");
-        mat.attenuationDistance = 2;
-        mat.onBeforeCompile = (shader) => {
-          shader.vertexShader =
-            "varying float vArchiveHeight;\n" + shader.vertexShader;
-          shader.vertexShader = shader.vertexShader.replace(
-            "#include <begin_vertex>",
-            "#include <begin_vertex>\nvArchiveHeight = position.y / 3.7;",
-          );
-          shader.fragmentShader =
-            "varying float vArchiveHeight;\n" + shader.fragmentShader;
-          shader.fragmentShader = shader.fragmentShader.replace(
-            "#include <roughnessmap_fragment>",
-            "#include <roughnessmap_fragment>\nroughnessFactor = mix(0.48, 0.035, smoothstep(0.36, 0.68, vArchiveHeight));",
-          );
-        };
-      }
-      if (name === "Internal_Ceramic") {
-        mat.color.set(this.lightingLook === "refined" ? "#c4baae" : "#c7beb6");
-        mat.roughness = 0.6;
-      }
-      if (name === "Printed_Label") mat.color.set("#eae5dc");
-      if (name === "Ivory_Edges") {
-        mat.color.set("#f0e7df");
-        mat.roughness = 0.31;
-        mat.transmission = 0.65;
-        mat.thickness = 0.04;
-      }
-      if (name === "Optical_Diffuser") {
-        mat.color.set("#e2dad4");
-        mat.transmission = 0;
-        mat.roughness = 0.7;
-      }
-      if (name === "Subsurface_Optics") {
-        mat.color.set(this.lightingLook === "refined" ? "#b9a796" : "#b9aba1");
-        mat.roughness = 0.48;
-        mat.metalness = 0.05;
-      }
-      if (name === "Optical_Edges") {
-        // Internal refractive shoulders must be in the opaque capture: WebGL's
-        // screen-space transmission cannot recursively sample another glass mesh.
-        mat.transmission = 0;
-        mat.color.set(this.lightingLook === "refined" ? "#d8c7b5" : "#d4c7be");
-        mat.roughness = 0.26;
-        mat.metalness = 0.08;
-      }
-      if (name === "Amber_Lightguide") {
-        // The guide sits only 0.002 ahead of the cover. At the long camera
-        // distance that gap can quantize to one depth value at oblique angles.
-        // Bias this narrow overlay only; retain the camera and global AO depth.
-        mat.polygonOffset = true;
-        mat.polygonOffsetFactor = -1;
-        mat.polygonOffsetUnits = -2;
-      }
-      if (name === "Carbon_Ink") continue;
+      const part = mesh.userData.assemblyPart as string;
+      const source = mesh.material as THREE.MeshPhysicalMaterial;
+      const originalName = source.name.replace(/\.\d+$/, "");
+      if (originalName === "Carbon_Ink") continue;
+      const name =
+        originalName === "Frosted_Polymer" && part !== "cover"
+          ? "Particle_Clear_Layer"
+          : originalName;
+      const geom = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+      const mat = source.clone();
       blacklineMaterial(mat, name);
       const selectedMesh = new THREE.Mesh(geom, mat);
-      selectedMesh.userData.surface = name;
-      selectedMesh.castShadow = name === "Optical_Diffuser";
+      selectedMesh.userData = {
+        surface: name,
+        assemblyPart: part,
+        videoSurface: mesh.userData.videoSurface,
+      };
       selectedMesh.receiveShadow = true;
       this.model.add(selectedMesh);
-      // Only the shell, edge and fasteners remain visible within tightly packed rows.
-      // Keep sub-millimetre optical/typographic geometry on the extracted cassette.
-      if (
-        ![
+      const inArray =
+        ["cover", "carrier", "fasteners"].includes(part) &&
+        [
           "Frosted_Polymer",
+          "Particle_Clear_Layer",
           "Ivory_Edges",
           "Titanium_Fasteners",
           "Champagne_Index",
-          "Optical_Diffuser",
-        ].includes(name)
-      ) {
-        this.appearance.register(name, mat);
-        continue;
+          "Amber_Lightguide",
+        ].includes(name);
+      // Give the rear glass a stable low/high palette, also used by the stowed panel backing.
+      const hasArrayPalette = inArray || name === "Particle_Clear_Layer";
+      const arrayMat = hasArrayPalette ? mat.clone() : undefined;
+      if (arrayMat) blacklineMaterial(arrayMat, name, true);
+      if (!registered.has(name)) {
+        this.appearance.register(name, mat, arrayMat);
+        registered.add(name);
       }
-      const arrayMat = mat.clone();
-      if (name === "Frosted_Polymer") {
-        arrayMat.transmission = 0.78;
-        if (this.lightingLook === "refined") {
-          // Longer oblique paths pick up the warm body tint, while the thin
-          // edges and the extracted clear cover retain a brighter response.
-          arrayMat.thickness = 0.28;
-          arrayMat.attenuationColor.set("#d4c7b4");
-          arrayMat.attenuationDistance = 1.2;
-        }
-        arrayMat.transparent = false;
-        arrayMat.color.set("#fff7ed");
-        arrayMat.onBeforeCompile = (shader) => {
-          shader.vertexShader =
-            "varying float vPanelHeight;\n" + shader.vertexShader;
-          shader.vertexShader = shader.vertexShader.replace(
-            "#include <begin_vertex>",
-            "#include <begin_vertex>\nvPanelHeight = position.y / 3.7;",
-          );
-          shader.fragmentShader =
-            "varying float vPanelHeight;\n" + shader.fragmentShader;
-          shader.fragmentShader = shader.fragmentShader.replace(
-            "#include <color_fragment>",
-            "#include <color_fragment>\ndiffuseColor.rgb *= mix(vec3(0.32, 0.37, 0.34), vec3(0.91, 0.98, 0.94), smoothstep(0.1, 1.0, vPanelHeight));",
-          );
-        };
-        arrayMat.roughness = 0.28;
-        arrayMat.clearcoat = 0.3;
-        arrayMat.clearcoatRoughness = 0.25;
-      }
-      if (name === "Optical_Diffuser") arrayMat.color.set("#806447");
-      if (name === "Ivory_Edges") {
-        arrayMat.transmission = 0;
-        arrayMat.color.set(
-          this.lightingLook === "refined" ? "#dcc9b0" : "#fff5e9",
-        );
-        arrayMat.roughness = 0.38;
-      }
-      if (name === "Champagne_Index") {
-        arrayMat.color.set("#e4d6c5");
-        arrayMat.metalness = 0.05;
-      }
-      blacklineMaterial(arrayMat, name, true);
-      this.appearance.register(name, mat, arrayMat);
-      const inst = new THREE.InstancedMesh(geom, arrayMat, count);
+      if (!inArray) continue;
+      const inst = new THREE.InstancedMesh(geom, arrayMat!, count);
       inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      inst.castShadow = name === "Optical_Diffuser";
       inst.receiveShadow = true;
       inst.frustumCulled = false;
       this.instances.push(inst);
       this.scene.add(inst);
     }
+    const arrayParticles = createArrayParticles(seeds, count);
+    this.instances.push(arrayParticles);
+    this.scene.add(arrayParticles);
+    this.model.add(createParticleCloud(seeds));
     this.labelCanvas.width = 1024;
     this.labelCanvas.height = 440;
     this.labelTexture = new THREE.CanvasTexture(this.labelCanvas);
@@ -372,6 +292,7 @@ export class ArchiveScene {
       }),
     );
     label.position.set(-1.36, 3.04, 0.255);
+    label.userData.assemblyPart = "cover";
     this.model.add(label);
     this.appearance.prepare(this.model);
     this.appearance.apply(this.model, 0);
@@ -382,9 +303,9 @@ export class ArchiveScene {
   }
 
   private assemblyTemplate?: Promise<THREE.Group>;
-  async createAssemblyModel() {
+  async createAssemblyModel(record: ArchiveRecord) {
     this.assemblyTemplate ??= new GLTFLoader()
-      .loadAsync("/assets/archive-assembly.glb")
+      .loadAsync("/assets/particles/archive-assembly.glb")
       .then((gltf) => {
         gltf.scene.updateMatrixWorld(true);
         return gltf.scene;
@@ -393,34 +314,47 @@ export class ArchiveScene {
         this.assemblyTemplate = undefined;
         throw error;
       });
-    const template = await this.assemblyTemplate;
+    const [template, seeds] = await Promise.all([
+      this.assemblyTemplate,
+      loadParticleSeeds(),
+    ]);
     const model = new THREE.Group();
     const meshes: THREE.Mesh[] = [];
     template.traverse((object) => {
-      if (!(object instanceof THREE.Mesh)) return;
-      const name = (object.material as THREE.Material).name.replace(
+      if (!(object instanceof THREE.Mesh) || object.userData.particleProxy)
+        return;
+      const part = object.userData.assemblyPart;
+      const base = (object.material as THREE.Material).name.replace(
         /\.\d+$/,
         "",
       );
+      const name =
+        base === "Frosted_Polymer" && part !== "cover"
+          ? "Particle_Clear_Layer"
+          : base;
       const mesh = new THREE.Mesh(
         object.geometry.clone().applyMatrix4(object.matrixWorld),
-        object.material,
+        (object.material as THREE.Material).clone(),
       );
-      mesh.userData.surface = name;
-      mesh.userData.assemblyPart = object.userData.assemblyPart;
+      mesh.userData = {
+        surface: name,
+        assemblyPart: part,
+        videoSurface: object.userData.videoSurface,
+      };
       model.add(mesh);
       meshes.push(mesh);
     });
     this.appearance.prepare(model);
     this.appearance.apply(model, 1);
-    this.appearance.setClarity(model, this.decryption.clarity);
+    this.appearance.setClarity(model, 1);
+    const cloud = createParticleCloud(seeds);
+    model.add(cloud);
     const canvas = document.createElement("canvas");
     canvas.width = this.labelCanvas.width;
     canvas.height = this.labelCanvas.height;
     canvas.getContext("2d")!.drawImage(this.labelCanvas, 0, 0);
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
     const label = new THREE.Mesh(
       new THREE.PlaneGeometry(0.99, 0.46),
       new THREE.MeshBasicMaterial({
@@ -434,18 +368,36 @@ export class ArchiveScene {
     label.userData.assemblyPart = "cover";
     model.add(label);
     meshes.push(label);
+    const panel = meshes.find((mesh) => mesh.userData.videoSurface)!;
+    const media = await createProjectMedia(panel, record);
     return {
       model,
       setClarity: (value: number) => this.appearance.setClarity(model, value),
+      update: (time: number, height: number, spread: number) =>
+        updateParticleClouds(
+          model,
+          time,
+          height,
+          spread,
+          1,
+          media.state().playing ? 0.65 : 1,
+        ),
+      setVideoFile: (file: File) => media.setFile(file),
+      toggleVideo: () => media.toggle(),
+      videoState: () => media.state(),
       dispose: () => {
+        media.dispose();
+        texture.dispose();
+        cloud.geometry.dispose();
+        cloud.material.dispose();
         for (const mesh of meshes) {
           mesh.geometry.dispose();
           (mesh.material as THREE.Material).dispose();
         }
-        texture.dispose();
       },
     };
   }
+
   setMode(mode: "hidden" | "archive" | "detail") {
     if (mode === "detail")
       this.decryption.enter(
@@ -1181,6 +1133,22 @@ export class ArchiveScene {
 
     this.camera.updateProjectionMatrix();
     this.camera.updateMatrixWorld();
+    const particleTime = this.reduced ? 0 : time;
+    updateParticleClouds(
+      this.model,
+      particleTime,
+      this.renderer.domElement.height,
+      0,
+      ease(this.lift.value / 0.4),
+    );
+    for (const outgoing of this.outgoing)
+      updateParticleClouds(
+        outgoing.group,
+        particleTime,
+        this.renderer.domElement.height,
+        0,
+        ease(outgoing.lift.value / 0.4),
+      );
     let neighborTop = -Infinity;
     const lane = selectedLane,
       row = selectedRow;

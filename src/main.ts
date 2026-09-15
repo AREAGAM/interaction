@@ -810,7 +810,7 @@ document.addEventListener("click", (e) => {
     viewer.open(
       records[selected].id,
       records[selected].title,
-      () => scene.createAssemblyModel(),
+      () => scene.createAssemblyModel(records[selected]),
       prefs.reduced,
     );
     audio.play("page-open");
